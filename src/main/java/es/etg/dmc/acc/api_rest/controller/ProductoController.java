@@ -2,7 +2,10 @@ package es.etg.dmc.acc.api_rest.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,38 +22,46 @@ import es.etg.dmc.acc.api_rest.model.Producto;
 public class ProductoController {
 
     private final List<Producto> productos = new ArrayList<>();
+    private Long idCounter = 1L;
 
     @PostMapping
-    public Producto agregarProducto(@RequestBody Producto producto) {
-        producto.setId((long) (productos.size() + 1));  // Simple auto-incremento
+    public ResponseEntity<Producto> agregarProducto(@RequestBody Producto producto) {
+        producto.setId(idCounter++);
         productos.add(producto);
-        return producto;
-    }
-
-    @GetMapping("/{id}")
-    public Producto obtenerProducto(@PathVariable Long id) {
-        return productos.stream().filter(p -> p.getId().equals(id)).findFirst().orElse(null);
+        return ResponseEntity.status(HttpStatus.CREATED).body(producto);
     }
 
     @GetMapping
-    public List<Producto> obtenerProductos() {
-        return productos;
+    public ResponseEntity<List<Producto>> obtenerProductos() {
+        return ResponseEntity.ok(productos);
     }
 
-    @DeleteMapping("/{id}")
-    public String eliminarProducto(@PathVariable Long id) {
-        productos.removeIf(p -> p.getId().equals(id));
-        return "Producto eliminado";
+    @GetMapping("/{id}")
+    public ResponseEntity<Producto> obtenerProductoPorId(@PathVariable Long id) {
+        Optional<Producto> producto = productos.stream().filter(p -> p.getId().equals(id)).findFirst();
+        return producto.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
     @PutMapping("/{id}")
-    public Producto actualizarProducto(@PathVariable Long id, @RequestBody Producto producto) {
-        Producto existing = obtenerProducto(id);
-        if (existing != null) {
-            existing.setNombre(producto.getNombre());
-            existing.setPrecio(producto.getPrecio());
-            return existing;
+    public ResponseEntity<Producto> actualizarProducto(@PathVariable Long id, @RequestBody Producto productoActualizado) {
+        for (Producto producto : productos) {
+            if (producto.getId().equals(id)) {
+                producto.setNombre(productoActualizado.getNombre());
+                producto.setPrecio(productoActualizado.getPrecio());
+                return ResponseEntity.ok(producto);
+            }
         }
-        return null;
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarProducto(@PathVariable Long id) {
+        boolean removed = productos.removeIf(p -> p.getId().equals(id));
+        if (removed) {
+            return ResponseEntity.noContent().build(); // 204 No Content
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 }

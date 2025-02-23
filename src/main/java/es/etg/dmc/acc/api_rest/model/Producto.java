@@ -1,5 +1,6 @@
 package es.etg.dmc.acc.api_rest.model;
 
+// CLASE CONVENCIONAL
 public class Producto {
     private Long id;
     private String nombre;
