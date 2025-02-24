@@ -2,7 +2,6 @@ package es.etg.dmc.acc.api_rest.controller;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import es.etg.dmc.acc.api_rest.model.Producto;
 
+//CLASE GESTORA
 @RestController
 @RequestMapping("/productos")
 public class ProductoController {
@@ -38,19 +38,23 @@ public class ProductoController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Producto> obtenerProductoPorId(@PathVariable Long id) {
-        Optional<Producto> producto = productos.stream().filter(p -> p.getId().equals(id)).findFirst();
-        return producto.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+        for (Producto producto : productos)
+            if (producto.getId().equals(id))
+                return ResponseEntity.ok(producto); // Retorna 200 OK con el producto encontrado
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); // Retorna 404 si no se encuentra el producto
     }
+
 
     @PutMapping("/{id}")
     public ResponseEntity<Producto> actualizarProducto(@PathVariable Long id, @RequestBody Producto productoActualizado) {
-        for (Producto producto : productos) {
+        for (Producto producto : productos)
             if (producto.getId().equals(id)) {
                 producto.setNombre(productoActualizado.getNombre());
                 producto.setPrecio(productoActualizado.getPrecio());
                 return ResponseEntity.ok(producto);
             }
-        }
+
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
